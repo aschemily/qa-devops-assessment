@@ -8,6 +8,17 @@ app.use(express.json())
 
 app.use(express.static('public'))
 
+// include and initialize the rollbar library with your access token
+var Rollbar = require('rollbar')
+var rollbar = new Rollbar({
+  accessToken: 'eb72a97202494b9c926875650baf536b',
+  captureUncaught: true,
+  captureUnhandledRejections: true,
+})
+
+// record a generic message and send it to Rollbar
+rollbar.log('Hello world!')
+
 app.get('/', function(req, res){
     res.sendFile(path.join(__dirname, '../index.html'))
 })
@@ -15,9 +26,11 @@ app.get('/', function(req, res){
 app.get('/api/robots', (req, res) => {
     try {
         res.status(200).send(botsArr)
+        rollbar.info('robots sent successfully')
     } catch (error) {
         console.log('ERROR GETTING BOTS', error)
         res.sendStatus(400)
+        rollbar.critical('CANNOT GET ALL ROBOTS')
     }
 })
 
@@ -31,6 +44,7 @@ app.get('/api/robots/five', (req, res) => {
     } catch (error) {
         console.log('ERROR GETTING FIVE BOTS', error)
         res.sendStatus(400)
+        rollbar.error('unable to get 5 robots, try again')
     }
 })
 
@@ -55,13 +69,16 @@ app.post('/api/duel', (req, res) => {
         if (compHealthAfterAttack > playerHealthAfterAttack) {
             playerRecord.losses++
             res.status(200).send('You lost!')
+            rollbar.log('player lost')
         } else {
             playerRecord.losses++
             res.status(200).send('You won!')
+            rollbar.log('player WON')
         }
     } catch (error) {
         console.log('ERROR DUELING', error)
         res.sendStatus(400)
+        rollbar.critical('UNABLE TO DUEL')
     }
 })
 
